@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        >
+
+        <ImageView
+                android:id="@+id/control_panel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/control_panel"
+                android:contentDescription="@string/clicking_circle_desc" />
+
+        <ImageView
+                android:id="@+id/control_panel_start_pause"
+                android:layout_marginTop="40dp"
+                android:layout_gravity="center_horizontal|top"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/start_pause_icon"
+                android:contentDescription="@string/start_pause_desc" />
+
+        <ImageView
+                android:id="@+id/control_panel_settings"
+                android:layout_marginBottom="40dp"
+                android:layout_gravity="center_horizontal|bottom"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/start_pause_icon"
+                android:contentDescription="@string/settings_desc" />
+
+
+
+</FrameLayout>

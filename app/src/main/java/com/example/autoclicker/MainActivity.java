@@ -8,25 +8,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewParent;
-import android.view.WindowManager;
-import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.Button;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.autoclicker.service.ForegroundService;
 import com.example.autoclicker.service.MyService;
 import com.example.autoclicker.service.Window;
-
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
@@ -42,13 +34,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        start = findViewById(R.id.start);
-        close = findViewById(R.id.close);
-        mainText = findViewById(R.id.text);
-        access_perm = findViewById(R.id.acces_perm);
-        Log.d(TAG, "onCreate: ");
+        init();
+        String id = MyService.class.getName();
+        Log.i(TAG, "onCreate: ff " + id);
 
+        Log.d(TAG, "onCreate: ");
         window = new Window(this);
+//        controlPanel = new ControlPanel(this);
 
         checkOverlayPermission();
 
@@ -56,59 +48,47 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             @Override
             public void onClick(View view) {
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-                isAccessibilityEnabled(MainActivity.this, "aaa");
 
+                boolean isAccessibilityEnabled = isAccessibilityEnabled(MainActivity.this);
+                Log.i("AAA", String.valueOf(isAccessibilityEnabled));
             }
         });
         start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startService();
-                window.open();
-//                MyService mm = new MyService();
-//                mm.doAction();
+                window.openControlPanel();
+                window.openCircle();
+
             }
         });
         close.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                window.close();
+                window.closeCircle();
+                window.closeControlPanel();
             }
         });
         mainText.setOnTouchListener(this);
 
-
-
-        long downTime = SystemClock.uptimeMillis();
-        long eventTime = SystemClock.uptimeMillis() + 100;
-        float x = 0.0f;
-        float y = 0.0f;
-// List of meta states found here: developer.android.com/reference/android/view/KeyEvent.html#getMetaState()
-        int metaState = 0;
-        @SuppressLint("Recycle") MotionEvent motionEvent = MotionEvent.obtain(
-                downTime,
-                eventTime,
-                MotionEvent.ACTION_UP,
-                x,
-                y,
-                metaState
-        );
-
-//        view.dispatchTouchEvent(motionEvent);
-
-
     }
 
-    private boolean isAccessibilityEnabled(Context context, String id) {
-        AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
-        List<AccessibilityServiceInfo> runningServices = am.getEnabledAccessibilityServiceList(AccessibilityEvent.TYPES_ALL_MASK);
-        Log.i("AAA", runningServices.toString() + "<\t>");
-        for (AccessibilityServiceInfo service : runningServices) {
-            Log.i("AAA", service.toString() + "<\t>");
+    private void init() {
+        start = findViewById(R.id.start);
+        close = findViewById(R.id.close);
+        mainText = findViewById(R.id.text);
+        access_perm = findViewById(R.id.acces_perm);
+    }
 
-//            if(id.equals(service.getId())) {
-//                return true;
-//            }
+    private boolean isAccessibilityEnabled(Context context) {
+        AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+        List<AccessibilityServiceInfo> runningServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+        String serviceId = getString(R.string.accessibility_service_id);
+        for (AccessibilityServiceInfo service : runningServices) {
+
+            if(serviceId.equals(service.getId())) {
+                return true;
+            }
         }
         return false;
     }
@@ -160,7 +140,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     protected void onDestroy() {
-        window.close();
+        window.closeCircle();
+        window.closeControlPanel();
         Log.i(TAG, "onDestroy: ");
         super.onDestroy();
     }

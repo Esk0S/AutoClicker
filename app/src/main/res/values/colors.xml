@@ -9,4 +9,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="main_circle">#801CC51F</color>
     <color name="main_circle_bound">#80083209</color>
+    <color name="control_panel">#252525</color>
 </resources>

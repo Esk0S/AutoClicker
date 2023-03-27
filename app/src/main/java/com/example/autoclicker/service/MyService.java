@@ -14,7 +14,10 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 
+import com.example.autoclicker.MainActivity;
+
 public class MyService extends AccessibilityService {
+    static MyService service = null;
     private static final String TAG = "MyService";
 
     @Override
@@ -24,33 +27,21 @@ public class MyService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent accessibilityEvent) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Looper.prepare();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-//                pressLocation(500, 500);
-                click(3, 0);
-                doRightThenDownDrag();
-                Log.i(TAG, "onAccessibilityEvent: ");
-            }
-        }).start();
-
+        Log.i(TAG, "onAccessibilityEvent: ");
     }
 
-    private void click(int x, int y) {
+    public boolean click(int x, int y, long duration, long startTime) {
         Log.i(TAG, String.format("click %d %d", x, y));
         Path path = new Path();
         path.moveTo(x, y);
         GestureDescription.Builder builder = new GestureDescription.Builder();
         GestureDescription gestureDescription = builder
-                .addStroke(new GestureDescription.StrokeDescription(path, 10, 1000))
+                .addStroke(new GestureDescription.StrokeDescription(path, startTime, duration))
                 .build();
-        dispatchGesture(gestureDescription, null, null);
+
+        boolean isDispatched = dispatchGesture(gestureDescription, null, null);
+        Log.i(TAG, "click: " + isDispatched);
+        return isDispatched;
     }
 
 
@@ -61,35 +52,21 @@ public class MyService extends AccessibilityService {
     }
 
     @Override
-    public void onServiceConnected() { // TODO Протестировать accessibility_service_config без задания параметров в этом методе
+    public void onServiceConnected() {
         super.onServiceConnected();
-
-//        AccessibilityServiceInfo info = new AccessibilityServiceInfo();
-
-//        info.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED |
-//                AccessibilityEvent.TYPE_VIEW_FOCUSED;
-//        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_SPOKEN;
-//        info.notificationTimeout = 100;
-//        this.setServiceInfo(info);
-
+        service = this;
+        startActivity(new Intent(this, MainActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         Log.i(TAG, "onServiceConnected: " + this.getServiceInfo());
 
-    }
-
-    public void doAction() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            performGlobalAction(GLOBAL_ACTION_RECENTS);
-        }
     }
 
     private void doRightThenDownDrag() {
         Path dragRightPath = new Path();
         dragRightPath.moveTo(200, 200);
         dragRightPath.lineTo(400, 200);
-        long dragRightDuration = 500L; // 0.5 second
+        long dragRightDuration = 500L;
 
-        // The starting point of the second path must match
-        // the ending point of the first path.
         Path dragDownPath = new Path();
         dragDownPath.moveTo(400, 200);
         dragDownPath.lineTo(400, 400);
@@ -100,53 +77,6 @@ public class MyService extends AccessibilityService {
         rightThenDownDrag.continueStroke(dragDownPath, dragRightDuration,
                 dragDownDuration, false);
 
-    }
-
-    // (x, y) in screen coordinates
-    private static GestureDescription createClick(float x, float y) {
-        // for a single tap a duration of 1 ms is enough
-        final int DURATION = 1;
-
-        Path clickPath = new Path();
-        clickPath.moveTo(x, y);
-        GestureDescription.StrokeDescription clickStroke =
-                new GestureDescription.StrokeDescription(clickPath, 0, DURATION);
-        GestureDescription.Builder clickBuilder = new GestureDescription.Builder();
-        clickBuilder.addStroke(clickStroke);
-        return clickBuilder.build();
-    }
-
-    public void doSomething() {
-        // callback invoked either when the gesture has been completed or cancelled
-        AccessibilityService.GestureResultCallback callback = new AccessibilityService.GestureResultCallback() {
-            @Override
-            public void onCompleted(GestureDescription gestureDescription) {
-                super.onCompleted(gestureDescription);
-                Log.d(TAG, "gesture completed");
-            }
-
-            @Override
-            public void onCancelled(GestureDescription gestureDescription) {
-                super.onCancelled(gestureDescription);
-                Log.d(TAG, "gesture cancelled");
-            }
-        };
-
-        boolean result = dispatchGesture(createClick(5, 200), callback, null);
-        Log.d(TAG, "Gesture dispatched? " + result);
-    }
-
-
-    private void pressLocation(int x, int y){
-        GestureDescription.Builder builder = new GestureDescription.Builder();
-        Path p = new Path();
-        p.moveTo(x, y);
-        p.lineTo(x+10, y+10);
-        builder.addStroke(new GestureDescription.StrokeDescription(p, 10L, 500L));
-        GestureDescription gesture = builder.build();
-        boolean isDispatched = dispatchGesture(gesture, null, null);
-
-        Toast.makeText(this, "Was it dispatched? " + isDispatched, Toast.LENGTH_SHORT).show();
     }
 
 }

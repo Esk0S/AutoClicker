@@ -3,8 +3,6 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-
         >
 
     <ImageView
@@ -13,10 +11,5 @@
             android:layout_height="wrap_content"
             android:src="@drawable/clicking_circle"
             android:contentDescription="@string/clicking_circle_desc" />
-    <Button
-            android:id="@+id/enable_clicking"
-            android:layout_below="@id/drawable_circle"
-            android:layout_width="65dp"
-            android:layout_height="wrap_content"/>
 
 </RelativeLayout>
