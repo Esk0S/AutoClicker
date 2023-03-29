@@ -1,11 +1,15 @@
 package com.example.autoclicker;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -28,6 +32,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private TextView mainText;
     private Button access_perm;
     private Window window;
+    private static final int REQUEST_OVERLAY_PERMISSION = 100;
+    private static final int REQUEST_ACCESSIBILITY_PERMISSION = 200;
+    private ActivityResultLauncher<Intent> overlayPermissionLauncher;
+    private ActivityResultLauncher<Intent> accessibilityPermissionLauncher;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -40,25 +48,35 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         Log.d(TAG, "onCreate: ");
         window = new Window(this);
-//        controlPanel = new ControlPanel(this);
 
-        checkOverlayPermission();
+        if (!Settings.canDrawOverlays(MainActivity.this)) {
+            overlayPermissionAlert();
+        }
 
         access_perm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
 
-                boolean isAccessibilityEnabled = isAccessibilityEnabled(MainActivity.this);
+                boolean isAccessibilityEnabled = isAccessibilityEnabled();
                 Log.i("AAA", String.valueOf(isAccessibilityEnabled));
             }
         });
+
         start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startService();
-                window.openControlPanel();
-                window.openCircle();
+                if (!Settings.canDrawOverlays(MainActivity.this)) {
+                    overlayPermissionAlert();
+                } else {
+                    startService();
+                    window.openControlPanel();
+                    window.openCircle();
+                }
+                if (!isAccessibilityEnabled()) {
+                    accessibilityPermissionAlert();
+                }
+
 
             }
         });
@@ -80,17 +98,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         access_perm = findViewById(R.id.acces_perm);
     }
 
-    private boolean isAccessibilityEnabled(Context context) {
-        AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
-        List<AccessibilityServiceInfo> runningServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
-        String serviceId = getString(R.string.accessibility_service_id);
-        for (AccessibilityServiceInfo service : runningServices) {
-
-            if(serviceId.equals(service.getId())) {
-                return true;
-            }
-        }
-        return false;
+    private boolean isAccessibilityEnabled() {
+        AccessibilityManager am = (AccessibilityManager) this.getSystemService(Context.ACCESSIBILITY_SERVICE);
+        return am.isEnabled();
     }
 
     private void startService() {
@@ -105,14 +115,34 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             startService(new Intent(this, ForegroundService.class));
     }
 
-    private void checkOverlayPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
-                Intent myIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
-                startActivity(myIntent);
-            }
-        }
+    private void overlayPermissionAlert() {
+        new AlertDialog.Builder(this)
+                .setTitle("Need a permission")
+                .setMessage("This app needs a display over other apps permission")
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:" + getPackageName()));
+                        startActivity(intent);
+                    }
+                })
+                .setNegativeButton(android.R.string.no, null)
+                .show();
     }
+
+    private void accessibilityPermissionAlert() {
+        new AlertDialog.Builder(this)
+                .setTitle("Need a permission")
+                .setMessage("This app needs an accessibility permission")
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                    }
+                })
+                .setNegativeButton(android.R.string.no, null)
+                .show();
+    }
+
     @Override
     protected void onResume() {
         Log.i(TAG, "onResume: ");

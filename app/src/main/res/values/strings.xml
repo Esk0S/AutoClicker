@@ -4,7 +4,6 @@
     <string name="accessibility_service_description">Description example</string>
     <string name="clicking_circle_desc">clicking circle</string>
     <string name="control_panel_desc">control panel</string>
-    <string name="accessibility_service_id">com.example.autoclicker/.service.MyService</string>
     <string name="start_pause_desc">start pause button</string>
     <string name="settings_desc">Settings description</string>
 </resources>

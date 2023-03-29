@@ -16,9 +16,12 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
+
 import com.example.autoclicker.R;
 
 import java.util.Timer;
@@ -68,7 +71,7 @@ public class Window extends AppCompatActivity {
         mParams.gravity = Gravity.CENTER;
         mWindowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
 
-        View conPanStartPause = controlPanel.findViewById(R.id.control_panel_start_pause);
+        ImageView conPanStartPause = controlPanel.findViewById(R.id.control_panel_start_pause);
 
         conPanStartPause.setOnTouchListener(new View.OnTouchListener() {
             Timer timer = null;
@@ -84,6 +87,7 @@ public class Window extends AppCompatActivity {
 
 
                     if (timer != null) {
+                        ((ImageView) view).setImageResource(R.drawable.play2);
                         timer.cancel();
                         timer = null;
                         mParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -91,6 +95,7 @@ public class Window extends AppCompatActivity {
                         mWindowManager.updateViewLayout(mView, mParams);
                         mView.getLayoutParams();
                     } else {
+                        ((ImageView) view).setImageResource(R.drawable.pause2);
                         timer = new Timer();
                         mView.getLocationOnScreen(coords);
                         mParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
@@ -147,17 +152,22 @@ public class Window extends AppCompatActivity {
         controlPanel.setOnTouchListener(new View.OnTouchListener() {
             final WindowManager.LayoutParams mParamsUpdated = mParamControlPanel;
             double y;
+            double x;
             double py;
+            double px;
             @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         y = mParamsUpdated.y;
+                        x = mParamsUpdated.x;
                         py = event.getRawY();
+                        px = event.getRawX();
                         break;
                     case MotionEvent.ACTION_MOVE:
                         mParamsUpdated.y = (int) (y + (event.getRawY() - py));
+                        mParamsUpdated.x = (int) (x + (event.getRawX() - px));
                         mWindowManager.updateViewLayout(v, mParamsUpdated);
                         break;
                 }

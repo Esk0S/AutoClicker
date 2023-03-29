@@ -9,7 +9,7 @@
             android:id="@+id/drawable_circle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/clicking_circle"
+            android:src="@drawable/cross"
             android:contentDescription="@string/clicking_circle_desc" />
 
 </RelativeLayout>
