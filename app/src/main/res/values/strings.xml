@@ -6,4 +6,34 @@
     <string name="control_panel_desc">control panel</string>
     <string name="start_pause_desc">start pause button</string>
     <string name="settings_desc">Settings description</string>
+    <string name="start_button">Start</string>
+    <string name="close_button">Close</string>
+    <string name="acc_perm">Accessibility Permisson</string>
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="settings_ms">ms</string>
+    <string name="settings_interval">Interval:</string>
+    <string name="settings_default_interval">100</string>
+    <string name="settings_title">Settings</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="accessibility_service_id">com.example.autoclicker/.service.MyService</string>
+    <string name="need_an_overlay_permission">Need an overlay permission</string>
+    <string name="need_an_accessibility_permission">Need an accessibility permission</string>
+    <string name="go_to_settings">Go to settings and give permission?</string>
+    <string name="need_a_permission">Need a permission</string>
+    <string name="this_app_needs_an_accessibility_permission">This app needs an accessibility permission</string>
+    <string name="this_app_needs_an_overlay_permission">This app needs an overlay permission</string>
 </resources>

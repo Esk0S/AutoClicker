@@ -55,27 +55,7 @@ public class MyService extends AccessibilityService {
     public void onServiceConnected() {
         super.onServiceConnected();
         service = this;
-        startActivity(new Intent(this, MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         Log.i(TAG, "onServiceConnected: " + this.getServiceInfo());
-
-    }
-
-    private void doRightThenDownDrag() {
-        Path dragRightPath = new Path();
-        dragRightPath.moveTo(200, 200);
-        dragRightPath.lineTo(400, 200);
-        long dragRightDuration = 500L;
-
-        Path dragDownPath = new Path();
-        dragDownPath.moveTo(400, 200);
-        dragDownPath.lineTo(400, 400);
-        long dragDownDuration = 500L;
-        GestureDescription.StrokeDescription rightThenDownDrag =
-                new GestureDescription.StrokeDescription(dragRightPath, 0L,
-                        dragRightDuration, true);
-        rightThenDownDrag.continueStroke(dragDownPath, dragRightDuration,
-                dragDownDuration, false);
 
     }
 

@@ -1,35 +1,30 @@
 package com.example.autoclicker.service;
 
+import static android.view.Display.DEFAULT_DISPLAY;
+import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 import static com.example.autoclicker.service.MyService.service;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
-import android.os.Handler;
-import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
 
+import com.example.autoclicker.MainActivity;
 import com.example.autoclicker.R;
-
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 public class Window extends AppCompatActivity {
     private static final String TAG = "Window";
@@ -39,10 +34,12 @@ public class Window extends AppCompatActivity {
     private LayoutInflater layoutInflater;
     private View mView;
     private View controlPanel;
+    private ImageView conPanStartPause;
+    private ImageView conPanSettings;
     private int[] coords = new int[2];
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams params;
-
+    public static long period = 100;
 
     @SuppressLint({"InflateParams", "ClickableViewAccessibility"})
     public Window(Context context) {
@@ -52,26 +49,32 @@ public class Window extends AppCompatActivity {
             mParams = new WindowManager.LayoutParams(
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                    TYPE_APPLICATION_OVERLAY,
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                     PixelFormat.TRANSLUCENT
             );
             mParamControlPanel = new WindowManager.LayoutParams(
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                    TYPE_APPLICATION_OVERLAY,
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                     PixelFormat.TRANSLUCENT
             );
         }
+
+        final DisplayManager dm = context.getSystemService(DisplayManager.class);
+        final Display primaryDisplay = dm.getDisplay(DEFAULT_DISPLAY);
+
+
         layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mView = layoutInflater.inflate(R.layout.pop_up, null);
         controlPanel = layoutInflater.inflate(R.layout.control_panel_pop_up, null);
         mParamControlPanel.gravity = Gravity.START;
         mParams.gravity = Gravity.CENTER;
-        mWindowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
+        mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 
-        ImageView conPanStartPause = controlPanel.findViewById(R.id.control_panel_start_pause);
+        conPanStartPause = controlPanel.findViewById(R.id.control_panel_start_pause);
+        conPanSettings = controlPanel.findViewById(R.id.control_panel_settings);
 
         conPanStartPause.setOnTouchListener(new View.OnTouchListener() {
             Timer timer = null;
@@ -81,7 +84,7 @@ public class Window extends AppCompatActivity {
                     Log.i(TAG, "onClick: ");
                     long clickDuration = 10;
                     long startTime = 60;
-                    long period = 100;
+//                    period = 100;
                     mView.getLocationOnScreen(coords);
                     Log.i(TAG, "Window: " + coords[0] + " " + coords[1]);
 
@@ -105,7 +108,6 @@ public class Window extends AppCompatActivity {
                         timer.scheduleAtFixedRate(new TimerTask() {
                             @Override
                             public void run() {
-
                                 service.click(coords[0] + mView.getMeasuredWidth() / 2,
                                         coords[1] + mView.getMeasuredHeight() / 2, clickDuration, startTime);
                             }
@@ -113,6 +115,20 @@ public class Window extends AppCompatActivity {
                     }
                 }
                 return true;
+            }
+        });
+
+        conPanSettings.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getActionMasked() == MotionEvent.ACTION_DOWN) {
+
+//                    FragmentManager manager =  ((FragmentActivity) cc).getSupportFragmentManager();
+//                    SettingsDialogFragment myDialogFragment = new SettingsDialogFragment(Window.this);
+//                    myDialogFragment.show(manager, "settings");
+
+                }
+                return false;
             }
         });
 

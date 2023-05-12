@@ -1,8 +1,14 @@
 package com.example.autoclicker;
 
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentResultListener;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.annotation.SuppressLint;
@@ -16,24 +22,26 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.autoclicker.service.ForegroundService;
 import com.example.autoclicker.service.MyService;
+import com.example.autoclicker.service.SettingsDialogFragment;
 import com.example.autoclicker.service.Window;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
+public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private Button start;
     private Button close;
+    private Button settings;
     private TextView mainText;
     private Button access_perm;
     private Window window;
-    private static final int REQUEST_OVERLAY_PERMISSION = 100;
-    private static final int REQUEST_ACCESSIBILITY_PERMISSION = 200;
     private ActivityResultLauncher<Intent> overlayPermissionLauncher;
     private ActivityResultLauncher<Intent> accessibilityPermissionLauncher;
 
@@ -44,13 +52,45 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         setContentView(R.layout.activity_main);
         init();
         String id = MyService.class.getName();
-        Log.i(TAG, "onCreate: ff " + id);
+        Log.i(TAG, "onCreate: " + id);
 
-        Log.d(TAG, "onCreate: ");
         window = new Window(this);
+
+        overlayPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (Settings.canDrawOverlays(this)) {
+                        if (!checkAccessibilityPermission()) {
+                            accessibilityPermissionAlert();
+                        }
+                    } else {
+                        Log.i(TAG, "Result else");
+                        new AlertDialog.Builder(this)
+                                .setTitle(R.string.need_a_permission)
+                                .setMessage(R.string.this_app_needs_an_overlay_permission)
+                                .setPositiveButton(R.string.ok, null)
+                                .show();
+                    }
+                }
+        );
+
+        accessibilityPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (!checkAccessibilityPermission()) {
+                        new AlertDialog.Builder(this)
+                                .setTitle(R.string.need_a_permission)
+                                .setMessage(R.string.this_app_needs_an_accessibility_permission)
+                                .setPositiveButton(R.string.ok, null)
+                                .show();
+                    }
+                }
+        );
 
         if (!Settings.canDrawOverlays(MainActivity.this)) {
             overlayPermissionAlert();
+        } else if (!checkAccessibilityPermission()) {
+            accessibilityPermissionAlert();
         }
 
         access_perm.setOnClickListener(new View.OnClickListener() {
@@ -58,8 +98,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             public void onClick(View view) {
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
 
-                boolean isAccessibilityEnabled = isAccessibilityEnabled();
-                Log.i("AAA", String.valueOf(isAccessibilityEnabled));
             }
         });
 
@@ -68,16 +106,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             public void onClick(View view) {
                 if (!Settings.canDrawOverlays(MainActivity.this)) {
                     overlayPermissionAlert();
+                } else if (!checkAccessibilityPermission()) {
+                    accessibilityPermissionAlert();
                 } else {
                     startService();
                     window.openControlPanel();
                     window.openCircle();
                 }
-                if (!isAccessibilityEnabled()) {
-                    accessibilityPermissionAlert();
-                }
-
-
             }
         });
         close.setOnClickListener(new View.OnClickListener() {
@@ -87,7 +122,26 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 window.closeControlPanel();
             }
         });
-        mainText.setOnTouchListener(this);
+        settings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FragmentManager manager = getSupportFragmentManager();
+                SettingsDialogFragment myDialogFragment = new SettingsDialogFragment();
+//                myDialogFragment.setTargetFragment();
+                myDialogFragment.show(manager, "settings");
+//                manager.setFragmentResultListener("interval",
+//                        (LifecycleOwner) getLifecycle(), new FragmentResultListener() {
+//                    @Override
+//                    public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle result) {
+//                        if (requestKey.equals("interval")) {
+//                            Window.period = result.getInt("interval");
+//                        }
+//                    }
+//                });
+
+            }
+        });
+//        mainText.setOnTouchListener(this);
 
     }
 
@@ -95,12 +149,22 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         start = findViewById(R.id.start);
         close = findViewById(R.id.close);
         mainText = findViewById(R.id.text);
+        settings = findViewById(R.id.settings);
         access_perm = findViewById(R.id.acces_perm);
     }
 
-    private boolean isAccessibilityEnabled() {
-        AccessibilityManager am = (AccessibilityManager) this.getSystemService(Context.ACCESSIBILITY_SERVICE);
-        return am.isEnabled();
+    private boolean checkAccessibilityPermission() {
+        AccessibilityManager accessibilityManager =
+                (AccessibilityManager) getSystemService(Context.ACCESSIBILITY_SERVICE);
+        List<AccessibilityServiceInfo> runningServices = accessibilityManager
+                        .getEnabledAccessibilityServiceList(AccessibilityEvent.TYPES_ALL_MASK);
+
+        for (AccessibilityServiceInfo service : runningServices) {
+            if(getString(R.string.accessibility_service_id).equals(service.getId())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void startService() {
@@ -117,29 +181,30 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private void overlayPermissionAlert() {
         new AlertDialog.Builder(this)
-                .setTitle("Need a permission")
-                .setMessage("This app needs a display over other apps permission")
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                .setTitle(R.string.need_an_overlay_permission)
+                .setMessage(R.string.go_to_settings)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                 Uri.parse("package:" + getPackageName()));
-                        startActivity(intent);
+                        overlayPermissionLauncher.launch(intent);
                     }
                 })
-                .setNegativeButton(android.R.string.no, null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
     private void accessibilityPermissionAlert() {
         new AlertDialog.Builder(this)
-                .setTitle("Need a permission")
-                .setMessage("This app needs an accessibility permission")
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                .setTitle(R.string.need_an_accessibility_permission)
+                .setMessage(R.string.go_to_settings)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                        accessibilityPermissionLauncher.launch(intent);
                     }
                 })
-                .setNegativeButton(android.R.string.no, null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
@@ -182,29 +247,29 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onRestart();
     }
 
-    private float downX;
-    private float downY;
-    @SuppressLint("ClickableViewAccessibility")
-    @Override
-    public boolean onTouch(View v, MotionEvent mv) {
-        switch (mv.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-                downX = mv.getX();
-                downY = mv.getY();
-//                Log.i(TAG, "Action Down: " + mv.getRawX() + "," + mv.getRawY());
-                Log.i(TAG, "Action Move V: " + v.getX() + "," + mv.getY());
-
-            case MotionEvent.ACTION_MOVE:
-//                Log.i(TAG, "Action Move: " + mv.getRawX() + "," + mv.getRawY());
-                Log.i(TAG, "Action Move V: " + v.getX() + "," + mv.getY());
-                float dx, dy;
-                dx = mv.getX() - downX;
-                dy = mv.getY() - downY;
-
-                v.setX(v.getX() + dx);
-                v.setY(v.getY() + dy);
-        }
-        return true;
-    }
+//    private float downX;
+//    private float downY;
+//    @SuppressLint("ClickableViewAccessibility")
+//    @Override
+//    public boolean onTouch(View v, MotionEvent mv) {
+//        switch (mv.getActionMasked()) {
+//            case MotionEvent.ACTION_DOWN:
+//                downX = mv.getX();
+//                downY = mv.getY();
+////                Log.i(TAG, "Action Down: " + mv.getRawX() + "," + mv.getRawY());
+//                Log.i(TAG, "Action Move V: " + v.getX() + "," + mv.getY());
+//
+//            case MotionEvent.ACTION_MOVE:
+////                Log.i(TAG, "Action Move: " + mv.getRawX() + "," + mv.getRawY());
+//                Log.i(TAG, "Action Move V: " + v.getX() + "," + mv.getY());
+//                float dx, dy;
+//                dx = mv.getX() - downX;
+//                dy = mv.getY() - downY;
+//
+//                v.setX(v.getX() + dx);
+//                v.setY(v.getY() + dy);
+//        }
+//        return true;
+//    }
 
 }
